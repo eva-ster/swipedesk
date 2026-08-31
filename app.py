@@ -63,11 +63,11 @@ def kleur_verdict(waarde: str) -> str:
 def chart_basis(grafiek: alt.Chart) -> alt.Chart:
     """Terugtredende assen en raster, conform het themapalet."""
     return grafiek.configure_view(strokeWidth=0).configure_axis(
-        gridColor=styles.CHART_GRID[mode],
-        domainColor=styles.CHART_GRID[mode],
-        tickColor=styles.CHART_GRID[mode],
-        labelColor=styles.CHART_INK[mode],
-        titleColor=styles.CHART_INK[mode],
+        gridColor=styles.CHART_GRID,
+        domainColor=styles.CHART_GRID,
+        tickColor=styles.CHART_GRID,
+        labelColor=styles.CHART_INK,
+        titleColor=styles.CHART_INK,
         labelFontSize=11,
         titleFontSize=11,
         titleFontWeight="normal",
@@ -129,7 +129,7 @@ def screen_dashboard() -> None:
         st.subheader(t("dash.longevity", lang))
         histogram = (
             alt.Chart(df)
-            .mark_bar(color=styles.CHART_HUE[mode], cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
+            .mark_bar(color=styles.CHART_HUE, cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
             .encode(
                 x=alt.X("longevity_days:Q", bin=alt.Bin(maxbins=20),
                         title=t("dash.longevity_axis", lang)),
@@ -159,7 +159,7 @@ def screen_dashboard() -> None:
         else:
             lijn = (
                 alt.Chart(verloop)
-                .mark_line(color=styles.CHART_HUE[mode], strokeWidth=2,
+                .mark_line(color=styles.CHART_HUE, strokeWidth=2,
                            point=alt.OverlayMarkDef(size=80, filled=True))
                 .encode(
                     x=alt.X("computed_on:T", title=t("dash.trend_axis", lang),
@@ -387,15 +387,29 @@ def screen_instellingen() -> None:
 
 
 SCHERMEN = {
-    "nav.dashboard": screen_dashboard,
-    "nav.feed": screen_feed,
-    "nav.swipefile": screen_swipefile,
-    "nav.settings": screen_instellingen,
+    "nav.dashboard": (screen_dashboard, ":material/dashboard:"),
+    "nav.feed": (screen_feed, ":material/format_list_bulleted:"),
+    "nav.swipefile": (screen_swipefile, ":material/bookmarks:"),
+    "nav.settings": (screen_instellingen, ":material/settings:"),
 }
 
-keuze = st.sidebar.radio(t("nav.screen", lang), list(SCHERMEN), format_func=lambda k: t(k, lang))
+if "screen" not in st.session_state:
+    st.session_state.screen = "nav.dashboard"
 
-SCHERMEN[keuze]()
+st.sidebar.divider()
+for sleutel, (_, icoon) in SCHERMEN.items():
+    actief = st.session_state.screen == sleutel
+    if st.sidebar.button(
+        t(sleutel, lang),
+        icon=icoon,
+        key=f"nav_{sleutel}",
+        width="stretch",
+        type="primary" if actief else "tertiary",
+    ):
+        st.session_state.screen = sleutel
+        st.rerun()
+
+SCHERMEN[st.session_state.screen][0]()
 
 # Na het scherm, zodat de hint onder de filters uitkomt die het scherm toevoegt.
 st.sidebar.divider()

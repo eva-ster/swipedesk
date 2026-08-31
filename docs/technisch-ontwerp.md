@@ -169,17 +169,33 @@ De drempelwaarden (45 dagen, drie varianten) zijn de gekalibreerde gewichten uit
 
 ## 7. Schermen → implementatie
 
-FO hoofdstuk 7 beschrijft zes schermen; dit TO bouwt er vier in fase 1 (S1, S2, S4, S6). S3 (concurrent-tracker) en S5 (brief) zijn fase 2.
+FO hoofdstuk 7 beschrijft zeven schermen; dit TO bouwt er vijf in fase 1 (S1, S2, S4, S6, S7). S3 (concurrent-tracker) en S5 (brief) zijn fase 2.
 
 - **S1 Feed** — één Streamlit-pagina: `st.dataframe` over `signals JOIN ads`, gesorteerd op `verdict, longevity_days`. Filters in de zijbalk (`st.sidebar.multiselect`) op format en land.
 - **S2 Advertentiedetail** — bij het selecteren van een rij: creative-afbeelding of video, volledige copy, en de onderbouwing van het signaal — `longevity_days` en `variant_count` expliciet naast elkaar, nooit alleen het label.
 - **S4 Swipefile** — formulier (`st.form`) met vrije-tekstvelden voor hook/angle/format en een notitie, schrijft naar `tags`. Aparte pagina toont alle getagde items, doorzoekbaar op tekst.
 - **S6 Instellingen** — CRUD op `tracked_queries` — niche, zoekterm, land toevoegen of verwijderen. Rechtstreeks tegen de tabel, geen aparte configuratielaag.
 
+### S7 Dashboard — een view, geen nieuwe module
+
+Vastgelegd in FO hoofdstuk 7 (v0.4). Bewust *geen* scope-uitbreiding: het dashboard toont uitsluitend tellingen over data die F3 en F8 al produceren. Geen nieuwe bron, geen nieuwe berekening, geen nieuw veld in de database. Het geeft F8 (bronbeheer) een eigen plek in plaats van onderaan Instellingen, en aggregeert F3 tot een overzicht.
+
+Drie regels die uit FO hoofdstuk 5 volgen en hier zichtbaar zijn:
+
+- **Geen samengestelde score.** Er staat nergens een "gezondheidscijfer" of percentage. Alles is een telling of een datum — feiten uit de eigen database, geen schattingen.
+- **De signaalverdeling is geen grafiek.** Drie getallen met hun label ernaast; het label draagt de betekenis, de kleur bevestigt hem. De drie signaalkleuren liggen bij kleurenblindheid te dicht op elkaar (groen↔amber ΔE 5,2 bij protanopie) om betekenis alleen via kleur te dragen — vandaar één hue voor de grafieken en labels voor de rest.
+- **Een verloop verschijnt pas bij twee meetdagen.** Eén punt als lijn tekenen zou suggereren dat er een trend bekend is die er niet is.
+
+Verder waarschuwt het dashboard zichtbaar zodra de laatste geslaagde ophaling ouder is dan een dag — de tegenmaatregel voor het verlopende token uit hoofdstuk 9.
+
 ### Taal en vormgeving
 
 - **Taal** — alle UI-tekst staat als sleutel in `i18n.py` (nl/en), nooit inline in `app.py`. Een test bewaakt dat beide talen dezelfde sleutels hebben, zodat een vergeten vertaling niet pas in de UI opvalt. De taalkeuze staat in de zijbalk.
-- **Light/dark** — `.streamlit/config.toml` definieert aparte `[theme.light]`- en `[theme.dark]`-paletten; Streamlit volgt standaard de systeeminstelling en biedt de wissel in zijn eigen menu. `styles.py` leest de actieve modus via `st.context.theme` en injecteert het bijpassende palet, zodat de eigen componenten (signaalbadges, copy-blok) meebewegen in plaats van in één modus vast te zitten.
+- **Light/dark** — `.streamlit/config.toml` definieert aparte `[theme.light]`- en `[theme.dark]`-paletten; Streamlit volgt standaard de systeeminstelling en biedt de wissel in zijn eigen menu.
+- **Waarom vlakken van `currentColor` afgeleid zijn** — `styles.py` leest de actieve modus via `st.context.theme`, maar Streamlit hertekent zijn eigen chrome soms zonder het script opnieuw te draaien. De server-side gekozen hex liep dan achter: donkere tegels op een lichte pagina. Alle structurele vlakken (tegels, kaarten, randen) zijn daarom `color-mix(in srgb, currentColor …)` — afgeleid van de tekstkleur die Streamlit zelf per thema zet, waardoor desync onmogelijk is. De semantische signaalkleuren blijven uit het palet komen; die zijn klein en corrigeren zich bij de eerstvolgende interactie.
+- **Chartkleuren zijn modus-onafhankelijk** — Altair bakt letterlijke kleuren in de SVG en kan geen CSS-variabele volgen. Eén set die op beide oppervlakken contrast haalt (`#6366F1`, 4,47:1 op wit en 4,23:1 op de donkere achtergrond) is daarom robuuster dan twee sets waarvan er één kan blijven hangen.
+
+> **Bij het ontwikkelen:** Streamlit cachet geïmporteerde modules. Wijzigingen in `styles.py` of `i18n.py` vragen een herstart van de server; alleen `app.py` herlaadt vanzelf.
 - **Signaalkleuren** — drie categorische kleuren (groen/amber/grijs), geen verloop. Een verloop zou opnieuw de precisie suggereren die FO hoofdstuk 5 juist afwijst.
 
 ## 8. Projectstructuur

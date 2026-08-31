@@ -1,7 +1,9 @@
 # Swipedesk — Functioneel Ontwerp
 
-**Concept v0.3 · 31 augustus 2026**
+**Concept v0.4 · 31 augustus 2026**
 Status: fase 1 gebouwd, nog geen echte data. Voor eigen gebruik. Werktitel.
+
+> **v0.4 — S7 Dashboard toegevoegd** aan hoofdstuk 7. Geen nieuwe module in hoofdstuk 4: het is een overzichtsview op F3 en F8, zonder nieuwe bron of berekening.
 
 > **v0.3 — dekking gecorrigeerd.** Hoofdstuk 6 stelde dat de Meta Ad Library API geen EU-beperking kent. Dat is bij Meta geverifieerd en onjuist: commerciële advertenties komen alleen terug als ze de EU bereikten. Hoofdstuk 5, 6, 10 (risico 03) en 11 zijn daarop bijgesteld. Gevolg: de markt is een blokkerende keuze geworden en staat nu boven de niche in hoofdstuk 11.
 
@@ -167,7 +169,7 @@ Lichter dan bij Kansenradar, want de hoofdbron is een officiële, gratis API zon
 
 ## 7. Schermen en flows
 
-### Zes schermen
+### Zeven schermen
 
 - **S1 Feed** — doorzoekbare advertentielijst, gesorteerd op signaal.
 - **S2 Advertentiedetail** — creative, copy, signaal met onderbouwing.
@@ -175,6 +177,19 @@ Lichter dan bij Kansenradar, want de hoofdbron is een officiële, gratis API zon
 - **S4 Swipefile** — eigen getagd archief, doorzoekbaar op hook/angle/format.
 - **S5 Brief** — het exporteerbare eindresultaat (fase 2).
 - **S6 Instellingen** — gevolgde niches, concurrenten, platform- en landvoorkeur.
+- **S7 Dashboard** — overzicht in tellingen: hoeveel advertenties gevolgd, hoe het signaal verdeeld is, hoe longevity gespreid is, en of de bron nog ververst.
+
+#### S7 Dashboard — een view, geen nieuwe module
+
+Toegevoegd in v0.4, en bewust geen uitbreiding van hoofdstuk 4: het dashboard toont uitsluitend tellingen over data die F3 (signaal-engine) en F8 (bronbeheer) al produceren. Geen nieuwe bron, geen nieuwe berekening, geen nieuw veld. Wat het wél doet is F8 een eigen plek geven in plaats van een tabel onderaan Instellingen, en F3 tot een overzicht aggregeren.
+
+> **Waarom dit geen dashboard met scores is.** De verleiding bij een overzichtsscherm is een samengesteld cijfer — een "gezondheidsscore", een percentage sterke signalen. Dat is exact de schijnprecisie die hoofdstuk 5 afwijst, en op een dashboard is het extra verleidelijk omdat het er professioneel uitziet. Alles op S7 is daarom een telling of een datum: feiten uit de eigen database, niet afgeleid en niet gewogen.
+
+> **Waarom de signaalverdeling geen taartdiagram is.** De drie signaalkleuren liggen bij kleurenblindheid te dicht op elkaar (groen↔amber ΔE 5,2 bij protanopie) om betekenis alleen via kleur te dragen. De verdeling staat daarom als drie getallen met hun label ernaast; de kleur bevestigt de betekenis, maar draagt hem nooit alleen. Grafieken op dit scherm gebruiken één kleur voor omvang, niet een kleur per categorie.
+
+> **Waarom een verloop pas bij twee meetdagen verschijnt.** Eén meetpunt als lijn tekenen suggereert een trend die er niet is. Tot die tweede dag staat er wat er is: een mededeling dat het verloop nog niet bestaat.
+
+S7 waarschuwt zichtbaar zodra de laatste geslaagde ophaling ouder is dan een dag. Dat is de functionele tegenhanger van een technisch probleem: het toegangstoken van de Ad Library verloopt elke 60 dagen, en een onderbroken reeks tast de longevity-berekening aan — de maat waar dit hele model op rust. Conform hoofdstuk 8 is dat zichtbaar, niet stil.
 
 ### Hoofdflow — van leeg canvas naar een eigen advertentie
 

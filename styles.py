@@ -53,11 +53,14 @@ def inject(mode: str) -> None:
     st.markdown(
         f"""
         <style>
-        :root {{
-            --sd-surface: {p['surface']};
-            --sd-surface-muted: {p['surface_muted']};
-            --sd-border: {p['border']};
-            --sd-text-muted: {p['text_muted']};
+        /* Afgeleid van currentColor, dat Streamlit zelf per thema zet. Een
+           vaste hex hier zou bij een themawissel zonder rerun uit de pas
+           lopen — grote donkere vlakken op een lichte pagina. Zo kan dat niet. */
+        .stApp {{
+            --sd-surface: color-mix(in srgb, currentColor 4%, transparent);
+            --sd-surface-muted: color-mix(in srgb, currentColor 6%, transparent);
+            --sd-border: color-mix(in srgb, currentColor 16%, transparent);
+            --sd-text-muted: color-mix(in srgb, currentColor 62%, transparent);
         }}
 
         .block-container {{ padding-top: 2.5rem; max-width: 1400px; }}
@@ -137,6 +140,26 @@ def inject(mode: str) -> None:
             font-size: 1.35rem;
             margin-bottom: 0.5rem;
         }}
+
+        /* Navigatie: knoppen die zich als navigatie-items gedragen —
+           links uitgelijnd, volle breedte, actieve staat duidelijk. */
+        section[data-testid="stSidebar"] .stButton > button {{
+            justify-content: flex-start;
+            text-align: left;
+            font-weight: 500;
+            padding: 0.45rem 0.7rem;
+            margin-bottom: 0.15rem;
+            border-radius: 0.5rem;
+        }}
+        /* Streamlit centreert de inhoud in een binnenste div; die moet mee. */
+        section[data-testid="stSidebar"] .stButton > button > div {{
+            justify-content: flex-start;
+            width: 100%;
+            gap: 0.6rem;
+        }}
+        section[data-testid="stSidebar"] .stButton > button p {{
+            font-weight: 500;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -158,6 +181,13 @@ def tile(label: str, value: str, accent: str = "") -> str:
 # Chartkleuren. Bewust één hue voor magnitude in plaats van een kleur per
 # signaal: de drie signaalkleuren liggen bij kleurenblindheid te dicht op
 # elkaar (groen↔amber ΔE 5.2) om betekenis alleen via kleur te dragen.
-CHART_HUE = {"light": "#4F46E5", "dark": "#8B90F8"}
-CHART_INK = {"light": "#5B6270", "dark": "#9BA3B2"}
-CHART_GRID = {"light": "#E2E5EA", "dark": "#2A2F3A"}
+#
+# Eén set voor beide modi, niet twee. Altair bakt letterlijke kleuren in de
+# SVG en kan geen CSS-variabele volgen; een modus-afhankelijke keuze zou dus
+# bij een themawissel zonder rerun verkeerd blijven staan. Deze waarden zijn
+# gekozen omdat ze op beide oppervlakken contrast halen:
+#   #6366F1  4.47:1 op wit · 4.23:1 op #0F1116
+#   #767E8B  4.10:1 op wit · 4.61:1 op #0F1116
+CHART_HUE = "#6366F1"
+CHART_INK = "#767E8B"
+CHART_GRID = "rgba(118, 126, 139, 0.28)"
