@@ -104,6 +104,32 @@ def inject(mode: str) -> None:
 
         .sd-meta {{ color: var(--sd-text-muted); font-size: 0.85rem; }}
 
+        /* KPI-tegel. De waarde staat altijd naast een tekstlabel: kleur
+           reinforceert de betekenis, maar draagt hem nooit alleen. */
+        .sd-tile {{
+            background: var(--sd-surface);
+            border: 1px solid var(--sd-border);
+            border-left: 3px solid var(--sd-accent, var(--sd-border));
+            border-radius: 0.6rem;
+            padding: 0.9rem 1.1rem;
+            height: 100%;
+        }}
+        .sd-tile-label {{
+            color: var(--sd-text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+        }}
+        .sd-tile-value {{
+            font-size: 1.75rem;
+            font-weight: 650;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }}
+        .sd-tile-strong {{ --sd-accent: {p['strong_fg']}; }}
+        .sd-tile-mid    {{ --sd-accent: {p['mid_fg']}; }}
+        .sd-tile-weak   {{ --sd-accent: {p['weak_fg']}; }}
+
         /* Metric-labels iets rustiger dan de standaard */
         [data-testid="stMetricLabel"] {{ color: var(--sd-text-muted); }}
 
@@ -119,3 +145,19 @@ def inject(mode: str) -> None:
 
 def badge(verdict: str, label: str) -> str:
     return f'<span class="sd-badge sd-badge-{verdict}">{label}</span>'
+
+
+def tile(label: str, value: str, accent: str = "") -> str:
+    klasse = f"sd-tile sd-tile-{accent}" if accent else "sd-tile"
+    return (
+        f'<div class="{klasse}"><div class="sd-tile-label">{label}</div>'
+        f'<div class="sd-tile-value">{value}</div></div>'
+    )
+
+
+# Chartkleuren. Bewust één hue voor magnitude in plaats van een kleur per
+# signaal: de drie signaalkleuren liggen bij kleurenblindheid te dicht op
+# elkaar (groen↔amber ΔE 5.2) om betekenis alleen via kleur te dragen.
+CHART_HUE = {"light": "#4F46E5", "dark": "#8B90F8"}
+CHART_INK = {"light": "#5B6270", "dark": "#9BA3B2"}
+CHART_GRID = {"light": "#E2E5EA", "dark": "#2A2F3A"}

@@ -13,6 +13,8 @@ Fase 1 (MVP) is opgezet: datamodel, acquisitiepipeline, signaal-engine en de vie
 
 Fase 0 — de handmatige validatie van het signaalmodel (FO hoofdstuk 9) — staat nog open. De drempelwaarden in `signal_engine.py` zijn tot die tijd aannames, geen gekalibreerde waarden.
 
+> **Blokkerende open keuze: de markt.** Meta's Ad Library levert commerciële advertenties alleen als ze de EU bereikten; daarbuiten uitsluitend politieke advertenties. Verkoop je niet in of naar de EU, dan is deze bron leeg en moet FO hoofdstuk 6 herzien worden vóórdat er verder gebouwd wordt. Zie FO hoofdstuk 6 en 11.
+
 ## Aan de slag
 
 ```bash

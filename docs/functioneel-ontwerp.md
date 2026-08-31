@@ -1,7 +1,9 @@
 # Swipedesk — Functioneel Ontwerp
 
-**Concept v0.2 · 31 augustus 2026**
-Status: nog niets gebouwd. Voor eigen gebruik. Werktitel.
+**Concept v0.3 · 31 augustus 2026**
+Status: fase 1 gebouwd, nog geen echte data. Voor eigen gebruik. Werktitel.
+
+> **v0.3 — dekking gecorrigeerd.** Hoofdstuk 6 stelde dat de Meta Ad Library API geen EU-beperking kent. Dat is bij Meta geverifieerd en onjuist: commerciële advertenties komen alleen terug als ze de EU bereikten. Hoofdstuk 5, 6, 10 (risico 03) en 11 zijn daarop bijgesteld. Gevolg: de markt is een blokkerende keuze geworden en staat nu boven de niche in hoofdstuk 11.
 
 Een persoonlijk onderzoeksarchief van advertenties die aantoonbaar lang blijven draaien — zodat hooks, angles en formats die elders al werken de basis worden van de eigen eerste advertentie, in plaats van een leeg canvas.
 
@@ -62,7 +64,7 @@ Er draait al een advertentie en de resultaten lopen terug (creative fatigue, hoo
 | Begrip | Betekenis |
 |---|---|
 | **Advertentie-item** | Eén specifieke advertentie zoals geregistreerd in een ad-library: creative, copy, actief-sinds datum, platform(en), land(en) en adverteerder. |
-| **Longevity** | Aantal dagen dat een advertentie ononderbroken actief staat. De kernmaat van dit hele model, omdat directe prestatiedata (spend, CTR, ROAS) voor commerciële advertenties buiten de EU grotendeels niet openbaar is. |
+| **Longevity** | Aantal dagen dat een advertentie ononderbroken actief staat. De kernmaat van dit model, omdat directe prestatiedata (spend, CTR, ROAS) voor commerciële advertenties nergens openbaar is — ook niet in de EU, waar alleen bereik beschikbaar is (hoofdstuk 5). |
 | **Variatiedruk** | Aantal gelijktijdig actieve advertenties van dezelfde adverteerder met dezelfde onderliggende angle. Adverteerders testen alleen door te schalen wat al werkt — veel varianten van hetzelfde idee is zelf een signaal. |
 | **Angle** | De onderliggende belofte of het probleem dat de advertentie aanspreekt (bijvoorbeeld "bespaar tijd" versus "los pijn op") — losstaand van de specifieke formulering. |
 | **Hook** | De eerste twee tot drie seconden video of de eerste regel tekst: het element dat bepaalt of iemand doorkijkt. |
@@ -114,7 +116,9 @@ Gevolgde niches, concurrenten en zoektermen; lokale voorkeuren voor platform en 
 
 ## 5. Het signaalmodel
 
-De kern van dit hele document zit hier: er is geen betrouwbare spend- of prestatiedata voor commerciële advertenties buiten de EU. Het model moet dus "waarschijnlijk winnend" afleiden uit wat wel publiek is — en moet daar eerlijk in zijn.
+De kern van dit hele document zit hier: er is geen betrouwbare spend- of prestatiedata voor commerciële advertenties. Het model moet dus "waarschijnlijk winnend" afleiden uit wat wel publiek is — en moet daar eerlijk in zijn.
+
+> **Nuance, toegevoegd 31 augustus 2026.** Voor advertenties die de EU bereikten levert de Ad Library wél `eu_total_reach`, plus een uitsplitsing naar leeftijd, geslacht en land. Dat is een meting, geen benadering, en daarmee een sterker signaal dan longevity. Het model hieronder blijft de basis — het moet werken zonder die velden, want een tweede bron levert ze niet — maar bereik hoort er als derde signaal bij zodra fase 1 aantoonbaar op EU-data draait. Spend blijft ontbreken: bereik zegt hoeveel mensen het zagen, niet wat het kostte of opleverde.
 
 ### Waarom geen score van 0 tot 100
 
@@ -140,13 +144,17 @@ Zelfde volgorde als bij Kansenradar: eerst officiële API, dan kant-en-klaar kop
 
 | Bron | Levert | Toegang | Beperking |
 |---|---|---|---|
-| Meta Ad Library API | Creative, copy, actief-sinds, platforms, landen | Officieel, gratis | Geen spend — buiten EU issue-ads geen budget- of bereikcijfers |
+| Meta Ad Library API | Creative, copy, actief-sinds, platforms, landen; voor EU-advertenties ook `eu_total_reach` en targeting-uitsplitsing | Officieel, gratis; identiteitsverificatie met overheids-ID vereist | Commerciële advertenties alleen als ze de EU bereikten; geen spend |
 | TikTok Commercial Content API | Zelfde als Meta, EU-only door de DSA-verplichting | Officieel, gratis | Dekking buiten de EU grotendeels leeg |
 | Kant-en-klare spy-tools (PiPiads, BigSpy, Minea Ads, Foreplay) | Vaak een eigen engagement- of spend-proxy, TikTok Shop-specifiek | Betaald (€30–100/mnd) | Overlap — deels dezelfde brondata, maar met eigen verrijking die zelf bouwen niet snel evenaart |
 | Landingspagina + Wayback Machine | Aanbod, garantie, historie van wijzigingen over tijd | Publiek, officieel archief-API | Stabiel — geen toegangsdrempel |
 | Eigen Ads Manager (Meta/TikTok) | Echte CPA, ROAS, frequentie — pas zodra er zelf geadverteerd wordt | Officieel, eigen account | Enige echte metingsbron, zie hoofdstuk 9 fase 2 |
 
-> Voor het MVP is **één bron genoeg**: de Meta Ad Library API. Die dekt de grootste advertentiemarkt en heeft geen EU-beperking. TikTok en de spy-tools zijn een uitbreiding, geen startvoorwaarde.
+> **Gecorrigeerd 31 augustus 2026.** Een eerdere versie van dit hoofdstuk stelde dat de Meta Ad Library API "geen EU-beperking" heeft, en dat was de reden om Meta boven TikTok te kiezen. Dat klopt niet. Meta's eigen documentatie bij `ads_archive`: *"Ads that did not reach any location in the EU will only return if they are about social issues, elections or politics."* Commerciële advertenties zitten dus alleen in de API als ze de EU bereikten — dezelfde DSA-grond als bij TikTok, alleen ruimer in dekking.
+
+> Voor het MVP is **één bron genoeg**: de Meta Ad Library API — mits er in of naar de EU verkocht wordt. Buiten de EU levert deze bron uitsluitend politieke en maatschappelijke advertenties op en is hij voor dit doel leeg. Voor een niet-EU markt verschuift risico 04 (een bestaande spy-tool huren) daarmee van bewust verworpen alternatief naar de realistische route; dat is dan een herziening van dit hoofdstuk, geen detail.
+
+> **Wat wel overdraagbaar blijft:** de tool levert patronen — welke hoek, welke belofte, welk format — en die zijn grotendeels marktonafhankelijk. Ook wie buiten de EU verkoopt, heeft aan onderzoek op EU-advertenties wat. Wat dan ontbreekt is een betrouwbaar *signaal* over de eigen markt: de longevity die je ziet weerspiegelt Europese concurrentie en biedingen.
 
 ## 6b. Data-acquisitie
 
@@ -215,7 +223,7 @@ De generieke categorieën (aanpak, uitvoering, juridisch in algemene zin) zijn a
 
 **02 — De grens tussen geïnspireerd en gekopieerd is dun.** Een hook of angle overnemen is legitiem patroononderzoek; een advertentie woordelijk namaken is een ander risico. De briefgenerator (F6) moet daarom altijd de bronvoorbeelden tonen, nooit een kant-en-klare tekst zonder attributie aanleveren.
 
-**03 — Dekking valt terug buiten grote platforms en de EU.** TikTok's Commercial Content API is EU-only door de DSA-verplichting; daarbuiten is de tool feitelijk Meta-only.
+**03 — Buiten de EU valt de dekking niet terug maar weg.** Zowel TikTok's Commercial Content API als Meta's Ad Library leveren commerciële advertenties alleen als die de EU bereikten — beide door de DSA, niet uit eigen keuze. Buiten de EU is de tool dus niet "Meta-only", maar zonder bruikbare bron. Dit was in een eerdere versie te mild opgeschreven en is de scherpste randvoorwaarde van het hele project: valt de markt buiten de EU, dan vervalt de gratis route en is risico 04 de enige overgebleven optie.
 
 **04 — Bouwen versus een kant-en-klare spy-tool huren.** PiPiads, BigSpy en Foreplay bestaan al en kosten €30–100 per maand, met vaak betere dekking dan een eigen Ad Library-integratie in fase 1. Bewust verworpen ten gunste van een eigen tool, hier vermeld voor traceerbaarheid.
 
@@ -225,7 +233,8 @@ Twee risico's zijn ongewijzigd overgenomen van Kansenradar omdat ze niet product
 
 | Vraag | Toelichting |
 |---|---|
-| **Niche** | Welke productcategorie eerst? Bepaalt of Meta alleen genoeg dekking geeft of dat TikTok vanaf dag één nodig is. |
+| **Markt** | *Nieuw en blokkerend, 31 augustus 2026.* In of naar de EU verkopen, of daarbuiten? Bepaalt of de gratis bron überhaupt data levert (hoofdstuk 6). Dit gaat vóór de nichekeuze: zonder EU-markt is er geen bron om een niche in te zoeken. |
+| **Niche** | Welke productcategorie eerst? Bepaalt of Meta alleen genoeg dekking geeft of dat TikTok erbij nodig is. |
 | **Startpunt** | Meteen koppelen aan een concreet product uit Kansenradar's eerdere werk, of een nieuwe, onafhankelijke productkeuze? *Voorstel: koppelen* — scheelt een aparte beslissing en toetst meteen of de twee documenten samen werken. |
 | **Deadline** | Concrete einddatum voor fase 1 — zonder vaste datum is "harde deadline" in hoofdstuk 9 een intentie, geen mechanisme. |
 | **Techniek** | Opgelost in het Technisch Ontwerp (`technisch-ontwerp.md`): Python + SQLite + Streamlit. |

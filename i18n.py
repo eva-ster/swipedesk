@@ -12,6 +12,7 @@ TRANSLATIONS = {
         # Navigatie
         "app.title": "Swipedesk",
         "nav.screen": "Scherm",
+        "nav.dashboard": "Dashboard",
         "nav.feed": "Feed",
         "nav.swipefile": "Swipefile",
         "nav.settings": "Instellingen",
@@ -67,6 +68,26 @@ TRANSLATIONS = {
         "swipefile.col.tagged_at": "getagd op",
         "swipefile.col.note": "notitie",
 
+        # S7 Dashboard
+        "dash.header": "Dashboard",
+        "dash.empty": "Nog geen data. Voeg een zoekterm toe bij Instellingen en draai `python run_daily.py`.",
+        "dash.kpi.ads": "Advertenties gevolgd",
+        "dash.kpi.advertisers": "Adverteerders",
+        "dash.kpi.tagged": "Getagd in swipefile",
+        "dash.kpi.freshness": "Dagen sinds laatste ophaling",
+        "dash.kpi.freshness_never": "nooit",
+        "dash.distribution": "Verdeling van het signaal",
+        "dash.longevity": "Verdeling van longevity",
+        "dash.longevity_axis": "Dagen actief",
+        "dash.longevity_count": "Aantal advertenties",
+        "dash.trend": "Sterke signalen over tijd",
+        "dash.trend_need_days": "Nog te weinig ophaaldagen voor een verloop. Dit verschijnt zodra er twee dagen gemeten zijn.",
+        "dash.trend_axis": "Ophaaldag",
+        "dash.source_health": "Bronstatus",
+        "dash.stale_warning": "Laatste geslaagde ophaling is {days} dagen oud. Een onderbroken reeks tast de longevity-berekening aan — controleer of het toegangstoken nog geldig is.",
+        "dash.never_fetched": "Nog geen geslaagde ophaling.",
+        "dash.caveat": "Alle cijfers zijn tellingen uit de eigen database, geen schattingen. Longevity komt uit de startdatum van de advertentie; het signaal is een filter, geen voorspelling.",
+
         # S6 Instellingen
         "settings.header": "Instellingen",
         "settings.queries_title": "Gevolgde zoektermen",
@@ -85,6 +106,7 @@ TRANSLATIONS = {
         # Navigation
         "app.title": "Swipedesk",
         "nav.screen": "Screen",
+        "nav.dashboard": "Dashboard",
         "nav.feed": "Feed",
         "nav.swipefile": "Swipefile",
         "nav.settings": "Settings",
@@ -139,6 +161,26 @@ TRANSLATIONS = {
         "swipefile.search": "Search hook, angle, format or note",
         "swipefile.col.tagged_at": "tagged at",
         "swipefile.col.note": "note",
+
+        # S7 Dashboard
+        "dash.header": "Dashboard",
+        "dash.empty": "No data yet. Add a search term under Settings and run `python run_daily.py`.",
+        "dash.kpi.ads": "Ads tracked",
+        "dash.kpi.advertisers": "Advertisers",
+        "dash.kpi.tagged": "Tagged in swipefile",
+        "dash.kpi.freshness": "Days since last fetch",
+        "dash.kpi.freshness_never": "never",
+        "dash.distribution": "Signal distribution",
+        "dash.longevity": "Longevity distribution",
+        "dash.longevity_axis": "Days active",
+        "dash.longevity_count": "Number of ads",
+        "dash.trend": "Strong signals over time",
+        "dash.trend_need_days": "Not enough fetch days for a trend yet. This appears once two days have been measured.",
+        "dash.trend_axis": "Fetch day",
+        "dash.source_health": "Source status",
+        "dash.stale_warning": "Last successful fetch is {days} days old. A broken series degrades the longevity calculation — check whether the access token is still valid.",
+        "dash.never_fetched": "No successful fetch yet.",
+        "dash.caveat": "All figures are counts from the local database, not estimates. Longevity comes from the ad's start date; the signal is a filter, not a prediction.",
 
         # S6 Settings
         "settings.header": "Settings",

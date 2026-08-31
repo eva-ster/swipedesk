@@ -2,6 +2,9 @@
 de Meta API aan. Zie docs/technisch-ontwerp.md hoofdstuk 7.
 UI-teksten staan als sleutels in i18n.py, vormgeving in styles.py."""
 
+from datetime import date
+
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -55,6 +58,153 @@ def kleur_verdict(waarde: str) -> str:
             p = styles.PALETTES[mode]
             return f"background-color: {p[f'{verdict}_bg']}; color: {p[f'{verdict}_fg']};"
     return ""
+
+
+def chart_basis(grafiek: alt.Chart) -> alt.Chart:
+    """Terugtredende assen en raster, conform het themapalet."""
+    return grafiek.configure_view(strokeWidth=0).configure_axis(
+        gridColor=styles.CHART_GRID[mode],
+        domainColor=styles.CHART_GRID[mode],
+        tickColor=styles.CHART_GRID[mode],
+        labelColor=styles.CHART_INK[mode],
+        titleColor=styles.CHART_INK[mode],
+        labelFontSize=11,
+        titleFontSize=11,
+        titleFontWeight="normal",
+    )
+
+
+def screen_dashboard() -> None:
+    st.header(t("dash.header", lang))
+    df = latest_signals()
+
+    if df.empty:
+        st.info(t("dash.empty", lang))
+        screen_bronstatus()
+        return
+
+    getagd = conn.execute("SELECT COUNT(*) AS n FROM tags").fetchone()["n"]
+    laatste = conn.execute(
+        "SELECT MAX(date(fetched_at)) AS d FROM raw_responses WHERE status = 'ok'"
+    ).fetchone()["d"]
+    dagen_oud = (date.today() - date.fromisoformat(laatste)).days if laatste else None
+
+    kolommen = st.columns(4)
+    kpis = [
+        (t("dash.kpi.ads", lang), str(len(df)), ""),
+        (t("dash.kpi.advertisers", lang), str(df["advertiser"].nunique()), ""),
+        (t("dash.kpi.tagged", lang), str(getagd), ""),
+        (
+            t("dash.kpi.freshness", lang),
+            str(dagen_oud) if dagen_oud is not None else t("dash.kpi.freshness_never", lang),
+            "",
+        ),
+    ]
+    for kolom, (label, waarde, accent) in zip(kolommen, kpis):
+        kolom.markdown(styles.tile(label, waarde, accent), unsafe_allow_html=True)
+
+    # Een verouderde reeks tast de longevity aan; dat hoort zichtbaar te zijn.
+    if dagen_oud is None:
+        st.warning(t("dash.never_fetched", lang))
+    elif dagen_oud > 1:
+        st.warning(t("dash.stale_warning", lang).format(days=dagen_oud))
+
+    st.markdown("<div style='height:1.25rem'></div>", unsafe_allow_html=True)
+
+    # Drie getallen verdienen geen grafiek — het label draagt de betekenis,
+    # de kleur bevestigt hem alleen (FO hoofdstuk 5: geen schijnprecisie).
+    st.subheader(t("dash.distribution", lang))
+    telling = df["verdict"].value_counts()
+    for kolom, verdict in zip(st.columns(3), VERDICTS):
+        kolom.markdown(
+            styles.tile(verdict_label(verdict), str(int(telling.get(verdict, 0))), verdict),
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<div style='height:1.25rem'></div>", unsafe_allow_html=True)
+
+    kolom_hist, kolom_trend = st.columns(2, gap="large")
+
+    with kolom_hist:
+        st.subheader(t("dash.longevity", lang))
+        histogram = (
+            alt.Chart(df)
+            .mark_bar(color=styles.CHART_HUE[mode], cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
+            .encode(
+                x=alt.X("longevity_days:Q", bin=alt.Bin(maxbins=20),
+                        title=t("dash.longevity_axis", lang)),
+                y=alt.Y("count():Q", title=t("dash.longevity_count", lang),
+                        axis=alt.Axis(tickMinStep=1)),
+                tooltip=[
+                    alt.Tooltip("longevity_days:Q", bin=alt.Bin(maxbins=20),
+                                title=t("dash.longevity_axis", lang)),
+                    alt.Tooltip("count():Q", title=t("dash.longevity_count", lang)),
+                ],
+            )
+            .properties(height=260)
+        )
+        st.altair_chart(chart_basis(histogram), width="stretch")
+
+    with kolom_trend:
+        st.subheader(t("dash.trend", lang))
+        verloop = pd.read_sql_query(
+            """SELECT computed_on, COUNT(*) AS aantal
+               FROM signals WHERE verdict = 'strong'
+               GROUP BY computed_on ORDER BY computed_on""",
+            conn,
+        )
+        # Eén meetpunt is geen verloop; dat suggereren zou liegen over wat we weten.
+        if len(verloop) < 2:
+            st.caption(t("dash.trend_need_days", lang))
+        else:
+            lijn = (
+                alt.Chart(verloop)
+                .mark_line(color=styles.CHART_HUE[mode], strokeWidth=2,
+                           point=alt.OverlayMarkDef(size=80, filled=True))
+                .encode(
+                    x=alt.X("computed_on:T", title=t("dash.trend_axis", lang),
+                            axis=alt.Axis(format="%-d %b", tickCount=len(verloop),
+                                          labelAngle=0, labelFlush=True)),
+                    y=alt.Y("aantal:Q", title=verdict_label("strong"),
+                            axis=alt.Axis(tickMinStep=1)),
+                    tooltip=[
+                        alt.Tooltip("computed_on:T", title=t("dash.trend_axis", lang),
+                                    format="%-d %b %Y"),
+                        alt.Tooltip("aantal:Q", title=verdict_label("strong")),
+                    ],
+                )
+                .properties(height=260)
+            )
+            st.altair_chart(chart_basis(lijn), width="stretch")
+
+    st.divider()
+    screen_bronstatus()
+    st.caption(t("dash.caveat", lang))
+
+
+def screen_bronstatus() -> None:
+    st.subheader(t("dash.source_health", lang))
+    bron = pd.read_sql_query(
+        """SELECT q.niche, q.term, q.land,
+                  MAX(CASE WHEN r.status = 'ok' THEN r.fetched_at END) AS last_ok,
+                  MAX(r.fetched_at) AS last_attempt
+           FROM tracked_queries q
+           LEFT JOIN raw_responses r ON r.query_id = q.id
+           GROUP BY q.id""",
+        conn,
+    )
+    if bron.empty:
+        st.caption(t("settings.source_empty", lang))
+        return
+
+    bron.columns = [
+        t("settings.niche", lang),
+        t("settings.term", lang),
+        t("feed.filter.country", lang),
+        t("settings.col.last_ok", lang),
+        t("settings.col.last_attempt", lang),
+    ]
+    st.dataframe(bron, width="stretch", hide_index=True)
 
 
 def screen_feed() -> None:
@@ -233,30 +383,11 @@ def screen_instellingen() -> None:
             st.rerun()
 
     st.divider()
-    st.subheader(t("settings.source_title", lang))
-    bron = pd.read_sql_query(
-        """SELECT q.niche, q.term, q.land,
-                  MAX(CASE WHEN r.status = 'ok' THEN r.fetched_at END) AS last_ok,
-                  MAX(r.fetched_at) AS last_attempt
-           FROM tracked_queries q
-           LEFT JOIN raw_responses r ON r.query_id = q.id
-           GROUP BY q.id""",
-        conn,
-    )
-    if bron.empty:
-        st.caption(t("settings.source_empty", lang))
-    else:
-        bron.columns = [
-            t("settings.niche", lang),
-            t("settings.term", lang),
-            t("feed.filter.country", lang),
-            t("settings.col.last_ok", lang),
-            t("settings.col.last_attempt", lang),
-        ]
-        st.dataframe(bron, width="stretch", hide_index=True)
+    screen_bronstatus()
 
 
 SCHERMEN = {
+    "nav.dashboard": screen_dashboard,
     "nav.feed": screen_feed,
     "nav.swipefile": screen_swipefile,
     "nav.settings": screen_instellingen,

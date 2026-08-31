@@ -1,7 +1,9 @@
 # Swipedesk — Technisch Ontwerp
 
-**Concept v0.1 · 31 augustus 2026**
-Scope: fase 1 MVP uit het FO (`functioneel-ontwerp.md`). Nog niets gebouwd.
+**Concept v0.2 · 31 augustus 2026**
+Scope: fase 1 MVP uit het FO (`functioneel-ontwerp.md`). Gebouwd, nog geen echte data.
+
+> **v0.2 —** longevity komt uit de API in plaats van uit de eigen waarnemingen (hoofdstuk 5), `signal.py` heet `signal_engine.py` wegens een botsing met de Python-standaardbibliotheek, en het 60-dagen-verval van het toegangstoken staat nu in hoofdstuk 9. Taal- en themalaag toegevoegd (hoofdstuk 7).
 
 De technische invulling van het FO: hoe fase 1 — één bron, één niche, één deadline — daadwerkelijk gebouwd wordt, zonder infrastructuur voor te bereiden op een schaal die er nog niet is.
 
@@ -221,7 +223,11 @@ META_AD_LIBRARY_APP_ID=
 DB_PATH=./data/swipedesk.db
 ```
 
-- **Toegangstoken** — vereist een Meta developer-app; de exacte verificatie-eisen voor de Ad Library API wisselen per periode en worden bij de start van fase 1 geverifieerd, niet aangenomen (dit is FO B1: kip-ei op toegang).
+- **Toegangstoken** — vereist een Meta developer-app. Geverifieerd op 31 augustus 2026, niet aangenomen (FO B1): identiteitsverificatie met een overheids-ID via `facebook.com/ID`, doorlooptijd één tot drie werkdagen, verplicht voor álle API-toegang en niet alleen voor politieke advertenties. App review is niet nodig.
+- **Het token verloopt na 60 dagen.** Dat is voor dit ontwerp geen detail: de dagelijkse cron valt dan stil, en juist een onderbroken reeks `ad_snapshots` tast de longevity-berekening aan — precies de maat waar het hele signaalmodel op rust. Twee opties, geen van beide gebouwd in fase 1:
+  1. Handmatig verversen, met een kalenderherinnering en een zichtbare waarschuwing in S6 zodra de laatste geslaagde ophaling ouder is dan een dag. Voldoende voor één gebruiker, en in lijn met FO hoofdstuk 8: zichtbaar minder dekking, geen stille leegte.
+  2. Een refresh-flow met een long-lived token. Meer code, en pas de moeite waard als de tool na fase 1 blijft draaien.
+  > Voorstel: optie 1 in fase 1. Een verlopen token is dan zichtbaar in plaats van sluipend, en dat is bij deze schaal het echte risico.
 - **Niets van bovenstaande wordt gecommit.** `.env` staat in `.gitignore`; alleen `.env.example` met lege waarden gaat mee in git.
 - **Gevolgde niches** staan in de database (`tracked_queries`), niet in een configuratiebestand — zo blijven ze via S6 aanpasbaar zonder herstart.
 
@@ -243,7 +249,9 @@ Dit is geen automatisering van fase 0 — het is de brug die aantoont dat de cod
 
 | Vraag | Toelichting |
 |---|---|
-| **API-toegang** | Meta developer-app aanmaken en verifiëren staat niet in dit TO als afgerond — eerste concrete actie bij de start van fase 1, met een tijdsinschatting die pas na het aanvraagproces bekend is. |
+| **API-toegang** | Procedure ✅ bekend (hoofdstuk 9): ID-verificatie, 1–3 werkdagen, geen app review. Nog te dóen — dit is de eerste concrete actie van fase 1 en niets werkt zonder. |
+| **Markt** | ⛔ Blokkerend, zie FO hoofdstuk 6 en 11. Buiten de EU levert de Ad Library geen commerciële advertenties. Deze keuze gaat vóór elke technische keuze hieronder: valt de markt buiten de EU, dan is `fetch.py` op de verkeerde bron gebouwd. |
+| **EU-velden benutten** | `eu_total_reach` en de targeting-uitsplitsing worden nu niet opgevraagd in `fetch.py`. Toevoegen is een uitbreiding van de `FIELDS`-lijst; het als derde signaal meewegen is een wijziging van hoofdstuk 6 en hoort pas na fase 0 (FO hoofdstuk 5). |
 | **Waar draait de cron** | Lokale laptop (moet dan aanstaan op het geplande moment) versus een goedkope VPS (€5–6/mnd, altijd aan). *Voorstel: VPS* — voorkomt gemiste dagen door een uitgeschakelde laptop, wat longevity-berekeningen zou verstoren. |
 | **Streamlit-toegang** | Alleen lokaal bereikbaar (`localhost`) of ook van buitenaf (bijv. via Tailscale) om de feed ook op de telefoon te bekijken? Geen blokkerende keuze, later toe te voegen. |
 | **Repository** | ✅ Opgelost: `eva-ster/swipedesk`. |
