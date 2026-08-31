@@ -72,7 +72,7 @@ Meta Ad Library API
   raw_responses  (SQLite, onveranderlijk)
         │
         ▼
-  parse.py + signal.py
+  parse.py + signal_engine.py
         │
         ▼
   ads, signals, tags  (SQLite)
@@ -81,7 +81,7 @@ Meta Ad Library API
   app.py — Streamlit UI
 ```
 
-`fetch.py` raakt alleen de API en het onveranderlijke ruwe archief. `parse.py` en `signal.py` lezen dat archief en schrijven de genormaliseerde tabellen. `app.py` leest uitsluitend die tabellen — de Streamlit-interface roept nooit rechtstreeks de Meta API aan.
+`fetch.py` raakt alleen de API en het onveranderlijke ruwe archief. `parse.py` en `signal_engine.py` lezen dat archief en schrijven de genormaliseerde tabellen. `app.py` leest uitsluitend die tabellen — de Streamlit-interface roept nooit rechtstreeks de Meta API aan.
 
 ## 4. Datamodel
 
@@ -94,7 +94,7 @@ Zes tabellen. `ad_snapshots` is bewust een eigen tabel en geen kolom op `ads`: l
 | `advertisers` | id, meta_page_id, name | Eén rij per adverteerder, basis voor variatiedruk |
 | `ads` | id, advertiser_id, meta_ad_id, landing_url, format, first_seen, copy_text, creative_url | Eén rij per advertentie, genormaliseerd uit raw_responses |
 | `ad_snapshots` | ad_id, observed_on, is_active | Eén rij per advertentie per ophaaldag — basis voor longevity én voor F4 straks |
-| `signals` | ad_id, computed_on, longevity_days, variant_count, verdict | Uitkomst van signal.py, herberekend bij elke run |
+| `signals` | ad_id, computed_on, longevity_days, variant_count, verdict | Uitkomst van signal_engine.py, herberekend bij elke run |
 | `tags` | ad_id, hook, angle, format, note, tagged_at | F5 — swipefile |
 
 > **Bewuste keuze:** `signals` wordt bij elke dagelijkse run volledig herberekend, niet incrementeel bijgewerkt. Bij deze schaal (één niche, dagelijks) is het verschil in rekentijd verwaarloosbaar, en herberekenen voorkomt een hele klasse van bugs waarbij een oude waarde blijft hangen.
@@ -121,7 +121,7 @@ mark_missing_ads_inactive(seen_today=parsed_ad_ids)  # niet gezien = gestopt
 
 # 3. signal — leest ads + ad_snapshots, schrijft signals
 for ad in ads.all():
-    longevity = count_consecutive_active_days(ad.id)
+    longevity = days_since_delivery_start(ad)   # zie noot hieronder
     variants  = count_active_ads(advertiser_id=ad.advertiser_id,
                                   landing_url=ad.landing_url)   # proxy voor "zelfde angle"
     verdict   = classify(longevity, variants)                   # hoofdstuk 6
@@ -129,6 +129,19 @@ for ad in ads.all():
 
 # 4. klaar — app.py leest alleen de tabellen hierboven, roept nooit de API aan
 ```
+
+### Waarom longevity uit de API komt, niet uit de eigen waarnemingen
+
+Longevity tellen als "aantal opeenvolgende dagen dat wij de advertentie actief zagen"
+klinkt zuiverder, maar maakt het MVP bij oplevering leeg: de drempel voor een sterk
+signaal ligt op 45 dagen, dus de tool zou anderhalve maand moeten draaien voordat er
+één sterk signaal kán verschijnen. De Ad Library levert `ad_delivery_start_time` mee,
+dus longevity is `vandaag - startdatum` zolang de advertentie vandaag actief is, en 0
+zodra hij niet meer wordt gezien.
+
+`ad_snapshots` blijft onverkort nodig: die reeks bepaalt of een advertentie vandaag
+nog actief is, en is straks de basis voor F4 (concurrent-tracking) — het moment van
+stoppen zien, dat volgens FO hoofdstuk 5 net zo veel zegt als het signaal zelf.
 
 ### Waarom "zelfde landingspagina" als proxy voor "zelfde angle"
 
@@ -161,22 +174,33 @@ FO hoofdstuk 7 beschrijft zes schermen; dit TO bouwt er vier in fase 1 (S1, S2, 
 - **S4 Swipefile** — formulier (`st.form`) met vrije-tekstvelden voor hook/angle/format en een notitie, schrijft naar `tags`. Aparte pagina toont alle getagde items, doorzoekbaar op tekst.
 - **S6 Instellingen** — CRUD op `tracked_queries` — niche, zoekterm, land toevoegen of verwijderen. Rechtstreeks tegen de tabel, geen aparte configuratielaag.
 
+### Taal en vormgeving
+
+- **Taal** — alle UI-tekst staat als sleutel in `i18n.py` (nl/en), nooit inline in `app.py`. Een test bewaakt dat beide talen dezelfde sleutels hebben, zodat een vergeten vertaling niet pas in de UI opvalt. De taalkeuze staat in de zijbalk.
+- **Light/dark** — `.streamlit/config.toml` definieert aparte `[theme.light]`- en `[theme.dark]`-paletten; Streamlit volgt standaard de systeeminstelling en biedt de wissel in zijn eigen menu. `styles.py` leest de actieve modus via `st.context.theme` en injecteert het bijpassende palet, zodat de eigen componenten (signaalbadges, copy-blok) meebewegen in plaats van in één modus vast te zitten.
+- **Signaalkleuren** — drie categorische kleuren (groen/amber/grijs), geen verloop. Een verloop zou opnieuw de precisie suggereren die FO hoofdstuk 5 juist afwijst.
+
 ## 8. Projectstructuur
 
 ```
 swipedesk/
 ├─ app.py                 # Streamlit-app, entrypoint voor de UI
+├─ i18n.py                # vertaalsleutels (nl/en) — geen UI-tekst inline
+├─ styles.py              # thema-palet en CSS voor light/dark
 ├─ fetch.py               # stap 1: Meta Ad Library API → raw_responses
 ├─ parse.py               # stap 2: raw_responses → ads, advertisers, ad_snapshots
-├─ signal.py              # stap 3: signaal-engine (hoofdstuk 6)
+├─ signal_engine.py       # stap 3: signaal-engine (hoofdstuk 6)
 ├─ run_daily.py           # roept fetch → parse → signal na elkaar aan; cron-target
 ├─ db.py                  # SQLite-verbinding en schema-migraties
 ├─ schema.sql             # tabeldefinities (hoofdstuk 4)
+├─ .streamlit/
+│  └─ config.toml         # Streamlit-thema, aparte light- en dark-paletten
 ├─ data/
 │  ├─ swipedesk.db        # SQLite-bestand, niet in git
 │  └─ raw/                # optioneel: ruwe payloads ook als losse JSON-bestanden
 ├─ tests/
-│  └─ test_signal.py      # signaal-engine tegen de fase-0-validatieset (hoofdstuk 10)
+│  ├─ test_signal_engine.py  # signaal-engine tegen de fase-0-validatieset (hoofdstuk 10)
+│  └─ test_i18n.py           # bewaakt dat beide talen dezelfde sleutels hebben
 ├─ docs/
 │  ├─ functioneel-ontwerp.md
 │  └─ technisch-ontwerp.md
@@ -203,7 +227,7 @@ DB_PATH=./data/swipedesk.db
 
 ## 10. Validatie tegen fase 0
 
-FO fase 0 (hoofdstuk 9) levert een handmatig doorzochte lijst van tien tot vijftien advertenties met een eigen inschatting van sterk/gemiddeld/zwak. Die lijst wordt de eerste testset: `tests/test_signal.py` voert dezelfde advertenties met hun daadwerkelijke `longevity` en `variant_count` door `signal.py` en vergelijkt de uitkomst met de handmatige inschatting.
+FO fase 0 (hoofdstuk 9) levert een handmatig doorzochte lijst van tien tot vijftien advertenties met een eigen inschatting van sterk/gemiddeld/zwak. Die lijst wordt de eerste testset: `tests/test_signal_engine.py` voert dezelfde advertenties met hun daadwerkelijke `longevity` en `variant_count` door `signal_engine.py` en vergelijkt de uitkomst met de handmatige inschatting.
 
 Dit is geen automatisering van fase 0 — het is de brug die aantoont dat de code hetzelfde model implementeert als de spreadsheet, vóórdat de fase-1-deadline erop vertrouwt.
 

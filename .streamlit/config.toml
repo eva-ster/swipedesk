@@ -1,0 +1,31 @@
+[theme]
+font ="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+headingFont = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+baseRadius = "0.5rem"
+buttonRadius = "0.5rem"
+baseFontSize = 15
+showWidgetBorder = true
+showSidebarBorder = true
+
+[theme.light]
+primaryColor = "#4F46E5"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F6F8"
+textColor = "#1A1D23"
+borderColor = "#E2E5EA"
+dataframeBorderColor = "#E2E5EA"
+dataframeHeaderBackgroundColor = "#F5F6F8"
+linkColor = "#4F46E5"
+
+[theme.dark]
+primaryColor = "#8B90F8"
+backgroundColor = "#0F1116"
+secondaryBackgroundColor = "#171A21"
+textColor = "#E6E8EC"
+borderColor = "#2A2F3A"
+dataframeBorderColor = "#2A2F3A"
+dataframeHeaderBackgroundColor = "#171A21"
+linkColor = "#8B90F8"
+
+[server]
+headless = true
